@@ -8,7 +8,6 @@
   ],
   "scripts": {
     "build": "turbo build --no-daemon",
-    "build:production": "turbo build:production --no-daemon",
     "clean:packages": "rm -rf packages/**/node_modules && rm -rf packages/**/dist && rm -rf packages/**/build && rm -rf packages/**/.turbo ",
     "clean:apps": "rm -rf apps/**/node_modules && rm -rf apps/**/dist && rm -rf apps/**/build && rm -rf apps/**/.turbo ",
     "clean": "rm -rf node_modules && bun clean:packages && bun clean:apps",
@@ -52,6 +51,7 @@
     "typescript": "5.3.3",
     "vite": "5.0.10",
     "vite-plugin-node-polyfills": "0.19.0",
+    "vite-plugin-singlefile": "^0.13.5",
     "vite-tsconfig-paths": "4.2.3"
   }
 }
