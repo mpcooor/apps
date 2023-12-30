@@ -1,6 +1,6 @@
-# Common
+# Apps
 
-This repository contains the code for some common libraries used between multiple parts of the Llama Wallet
+This repository the apps bundled inside the Llama Wallet.
 
 This project uses:
 
@@ -15,7 +15,7 @@ First of all, install the dependencies to run this app:
 
 ```bash
 # Clone this repository
-$ git clone https://github.com/mpcooor/common && cd common
+$ git clone https://github.com/mpcooor/apps && cd apps
 
 # Install dependencies
 $ bun install

@@ -1,0 +1,11 @@
+{
+  "name": "@llama-wallet/apps-mpc",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && vite build",
+    "build:production": "tsc -p tsconfig.json && PRODUCTION=1 vite build",
+    "tscheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

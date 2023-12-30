@@ -1,7 +1,12 @@
 {
   "files": {
     "maxSize": 10485760,
-    "ignore": ["node_modules", "dist/**"]
+    "ignore": [
+      "node_modules",
+      "packages/**/dist/**",
+      "apps/mpc/src/mpc/wasm/**",
+      "apps/**/dist/**"
+    ]
   },
   "organizeImports": {
     "enabled": true

@@ -1,30 +1,57 @@
 {
-  "name": "@llama-wallet/common",
+  "name": "@llama-wallet/apps",
   "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "packageManager": "bun@1.0.20",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "format": "biome format --write ./",
-    "lint": "biome lint --apply ./",
+    "build": "turbo build --no-daemon",
+    "build:production": "turbo build:production --no-daemon",
+    "clean:packages": "rm -rf packages/**/node_modules && rm -rf packages/**/dist && rm -rf packages/**/build && rm -rf packages/**/.turbo ",
+    "clean:apps": "rm -rf apps/**/node_modules && rm -rf apps/**/dist && rm -rf apps/**/build && rm -rf apps/**/.turbo ",
+    "clean": "rm -rf node_modules && bun clean:packages && bun clean:apps",
+    "encode:wasm": "bun scripts/wasm.ts && bun format",
+    "encode:worker": "bun run build && bun scripts/worker.ts && bun format",
+    "format:packages": "biome format --write ./packages",
+    "format:apps": "biome format --write ./apps",
+    "format": "bun format:packages && bun format:apps",
+    "lint:packages": "biome lint --apply ./packages",
+    "lint:apps": "biome lint --apply ./apps",
+    "lint": "bun lint:packages && bun lint:apps",
     "prepare": "husky install",
-    "tscheck": "tsc -p tsconfig.json --noEmit",
+    "tscheck": "turbo tscheck --no-daemon",
     "update:check": "bunx npm-check-updates",
     "update:install": "bunx npm-check-updates -u"
   },
   "lint-staged": {
-    "src/**/*.{js,ts}": ["bun lint"]
+    "packages/**/src/**/*.{js,jsx,ts,tsx}": [
+      "bun lint:packages"
+    ],
+    "apps/**/src/**/*.{js,jsx,ts,tsx}": [
+      "bun lint:apps"
+    ]
+  },
+  "dependencies": {
+    "comlink": "^4.4.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "viem": "1.21.1"
   },
   "devDependencies": {
     "@biomejs/biome": "1.4.1",
+    "@cloudflare/workers-types": "^4.20231218.0",
     "@types/node": "20.10.6",
+    "@types/react": "^18.2.46",
+    "@types/react-dom": "^18.2.18",
+    "@vitejs/plugin-react": "4.2.1",
     "husky": "8.0.3",
     "lint-staged": "15.2.0",
-    "typescript": "5.3.3"
-  },
-  "dependencies": {
-    "@cloudflare/workers-types": "^4.20231218.0"
+    "turbo": "^1.11.2",
+    "typescript": "5.3.3",
+    "vite": "5.0.10",
+    "vite-plugin-node-polyfills": "0.19.0",
+    "vite-tsconfig-paths": "4.2.3"
   }
 }
