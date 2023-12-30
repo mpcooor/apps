@@ -10,7 +10,7 @@ if (workerFile) {
   // @ts-ignore
   const encoded = Buffer.from(worker, 'binary').toString('base64')
 
-  const file = `export default \`${encoded}\``
+  const file = 'export default `' + encoded + '`'
 
-  writeFileSync('./apps/mpc/src/worker/built.ts', file)
+  writeFileSync('./apps/mpc/src/mpc/worker/built.ts', file)
 }

@@ -1,6 +1,8 @@
 import { ILocalKey } from '@llama-wallet/types'
 import * as Comlink from 'comlink'
 import { createContext, useContext } from 'react'
+import { KeyGenerator, Signer } from '../wasm'
+import base64Worker from './built'
 
 export interface IEcdsaWorker {
   KeyGenerator(
@@ -16,9 +18,6 @@ export interface IEcdsaWorker {
 
   Signer(index: number, participants: number[], localKey: ILocalKey): Promise<Signer>
 }
-
-import { KeyGenerator, Signer } from '../wasm'
-import base64Worker from './built'
 
 if (window.location.hash === 'impossible') {
   new Worker(new URL('./worker.ts', import.meta.url), {

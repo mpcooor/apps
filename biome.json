@@ -5,7 +5,9 @@
       "node_modules",
       "packages/**/dist/**",
       "apps/mpc/src/mpc/wasm/**",
-      "apps/**/dist/**"
+      "apps/mpc/src/mpc/worker/**",
+      "apps/**/dist/**",
+      "scripts/**"
     ]
   },
   "organizeImports": {

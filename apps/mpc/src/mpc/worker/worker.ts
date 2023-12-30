@@ -1,6 +1,6 @@
 import * as Comlink from 'comlink'
 
-import { init, KeyGenerator, Signer } from '../wasm'
+import { KeyGenerator, Signer, init } from '../wasm'
 
 void (async () => {
   await init()
