@@ -1,0 +1,22 @@
+name: Validate Build
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [ready_for_review, synchronize, opened]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: oven-sh/setup-bun@v1
+
+      - name: Install
+        run: bun install
+
+      - name: Check Types
+        run: bun tscheck

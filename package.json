@@ -1,0 +1,30 @@
+{
+  "name": "@llama-wallet/common",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "format": "biome format --write ./",
+    "lint": "biome lint --apply ./",
+    "prepare": "husky install",
+    "tscheck": "tsc -p tsconfig.json --noEmit",
+    "update:check": "bunx npm-check-updates",
+    "update:install": "bunx npm-check-updates -u"
+  },
+  "lint-staged": {
+    "src/**/*.{js,ts}": ["bun lint"]
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.4.1",
+    "@types/node": "20.10.6",
+    "husky": "8.0.3",
+    "lint-staged": "15.2.0",
+    "typescript": "5.3.3"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0"
+  }
+}
