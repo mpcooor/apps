@@ -1,5 +1,5 @@
 {
-  "name": "@mpcooor/apps-mpc",
+  "name": "@llama-wallet/apps-mpc",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.html",
