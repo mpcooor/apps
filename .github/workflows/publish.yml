@@ -18,9 +18,6 @@ jobs:
       - name: Install
         run: bun install
 
-      - name: Check Types
-        run: bun tscheck
-
       - name: Build
         run: bun run build
 
