@@ -1,7 +1,5 @@
 node_modules/
 
 packages/**/.turbo/
-packages/**/dist/
 
 apps/**/.turbo/
-apps/**/dist/

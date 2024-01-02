@@ -1,0 +1,10 @@
+import { IKeyShare, IMessage, IPresignState } from '@llama-wallet/types';
+export declare function bufferToHex(array: Uint8Array | ArrayBuffer): string;
+export declare function hexToBuffer(hex: string): Uint8Array;
+export declare function stringToBuffer(string: string): Uint8Array;
+export declare function keyShareToString(key: IKeyShare): string;
+export declare function keyShareFromString(rawKey: string): IKeyShare;
+export declare function presignStateToString(presign: IPresignState): string;
+export declare function presignStateFromString(rawPresign: string): IPresignState;
+export declare function roundKeygenToString(roundKeygen: IMessage): string | undefined;
+export declare function roundKeygenFromString(roundKeygen: string): IMessage | undefined;
