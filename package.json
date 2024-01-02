@@ -2,10 +2,7 @@
   "name": "@llama-wallet/apps",
   "version": "0.0.0",
   "packageManager": "bun@1.0.20",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "build": "turbo build --no-daemon",
     "clean": "rm -rf node_modules && bun clean:packages && bun clean:apps",
@@ -20,29 +17,22 @@
     "lint:apps": "biome lint --apply ./apps",
     "lint:packages": "biome lint --apply ./packages",
     "prepare": "husky install",
-    "publish:deploy": "changeset publish",
-    "publish:version": "changeset version",
     "tscheck": "turbo tscheck --no-daemon",
     "update:check": "bunx npm-check-updates",
     "update:install": "bunx npm-check-updates -u"
   },
   "lint-staged": {
-    "packages/**/src/**/*.{js,jsx,ts,tsx}": [
-      "bun lint:packages"
-    ],
-    "apps/**/src/**/*.{js,jsx,ts,tsx}": [
-      "bun lint:apps"
-    ]
+    "packages/**/src/**/*.{js,jsx,ts,tsx}": ["bun lint:packages"],
+    "apps/**/src/**/*.{js,jsx,ts,tsx}": ["bun lint:apps"]
   },
   "dependencies": {
     "comlink": "4.4.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "viem": "1.21.1"
+    "viem": "1.21.4"
   },
   "devDependencies": {
     "@biomejs/biome": "1.4.1",
-    "@changesets/cli": "2.27.1",
     "@cloudflare/workers-types": "4.20231218.0",
     "@types/node": "20.10.6",
     "@types/react": "18.2.46",
