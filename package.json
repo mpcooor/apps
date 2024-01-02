@@ -2,7 +2,10 @@
   "name": "@llama-wallet/apps",
   "version": "0.0.0",
   "packageManager": "bun@1.0.20",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "build": "turbo build --no-daemon",
     "clean": "rm -rf node_modules && bun clean:packages && bun clean:apps",
@@ -24,8 +27,12 @@
     "update:install": "bunx npm-check-updates -u"
   },
   "lint-staged": {
-    "packages/**/src/**/*.{js,jsx,ts,tsx}": ["bun lint:packages"],
-    "apps/**/src/**/*.{js,jsx,ts,tsx}": ["bun lint:apps"]
+    "packages/**/src/**/*.{js,jsx,ts,tsx}": [
+      "bun lint:packages"
+    ],
+    "apps/**/src/**/*.{js,jsx,ts,tsx}": [
+      "bun lint:apps"
+    ]
   },
   "dependencies": {
     "comlink": "4.4.1",
