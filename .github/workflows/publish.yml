@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v1
 
       - name: Install
@@ -29,3 +29,7 @@ jobs:
         uses: changesets/action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
+
+      - name: Publish
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        run: bun publish:deploy

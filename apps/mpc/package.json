@@ -2,6 +2,14 @@
   "name": "@llama-wallet/apps-mpc",
   "version": "1.0.0",
   "type": "module",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@github.com/mpcooor/apps.git",
+    "directory": "@llama-wallet/apps-mpc"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json && vite build",
     "tscheck": "tsc -p tsconfig.json --noEmit"

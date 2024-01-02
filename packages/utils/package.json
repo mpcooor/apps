@@ -3,6 +3,14 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@github.com/mpcooor/apps.git",
+    "directory": "@llama-wallet/utils"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "tscheck": "tsc -p tsconfig.json --noEmit"
