@@ -18,7 +18,6 @@
     "lint:packages": "biome lint --apply ./packages",
     "prepare": "husky install",
     "publish:deploy": "changeset publish",
-    "publish:init": "changeset",
     "publish:version": "changeset version",
     "tscheck": "turbo tscheck --no-daemon",
     "update:check": "bunx npm-check-updates",
