@@ -1,6 +1,0 @@
-export const serverPublickKey =
-  '0401d25ac699d311dcad2c93c0a680d4d6a167705734f31860d700aa8567d3562ce4e9f052da4ae66aa1b307ddb86f0a6125947bf0bc456d3f0cf1e18696379446f61b00e2a6930bb7260bffc8f48b786d566acb5e0ee69428672976bce14b13a32e844a2aab797efc9209160b643120ee7fa0c116c39887b1fbb13598b3cf9c6d43566730'
-
-export const relayerServerUrl = 'wss://relayer.horcrux.fi/'
-
-export const signerServerUrl = 'wss://signer.horcrux.fi'
