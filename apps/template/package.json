@@ -1,0 +1,9 @@
+{
+  "name": "@llama-wallet/template",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && vite build",
+    "tscheck": "tsc -p tsconfig.json --noEmit"
+  }
+}
