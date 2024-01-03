@@ -1,9 +1,6 @@
 {
   "extends": ["//"],
   "pipeline": {
-    "build": {
-      "outputs": ["dist/**"]
-    },
     "tscheck": {}
   }
 }

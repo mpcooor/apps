@@ -2,11 +2,8 @@
   "extends": ["//"],
   "pipeline": {
     "build": {
-      "dependsOn": ["@llama-wallet/config#build", "@llama-wallet/types#build", "@llama-wallet/utils#build"],
       "outputs": ["dist/**"]
     },
-    "tscheck": {
-      "dependsOn": ["@llama-wallet/config#build", "@llama-wallet/types#build", "@llama-wallet/utils#build"]
-    }
+    "tscheck": {}
   }
 }
