@@ -13,6 +13,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && vite build",
+    "encode:wasm": "bun scripts/wasm.ts",
+    "encode:worker": "bun run build && bun scripts/worker.ts",
     "tscheck": "tsc -p tsconfig.json --noEmit"
   }
 }
