@@ -1,6 +1,12 @@
 {
   "extends": ["//"],
   "pipeline": {
-    "tscheck": {}
+    "build": {
+      "dependsOn": ["@llama-wallet/types#build"],
+      "outputs": ["dist/**"]
+    },
+    "tscheck": {
+      "dependsOn": ["@llama-wallet/types#build"]
+    }
   }
 }
