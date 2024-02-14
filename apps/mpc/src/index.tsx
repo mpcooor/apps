@@ -2,6 +2,7 @@ import { IKeyShare, SessionDevice } from '@llama-wallet/types'
 import { StrictMode, useCallback, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { MpcProvider, WorkerProvider, useWorker } from '@/mpc'
+import { cryptoKeyToHex, decryptVault, deriveKey, deriveSymmetricKeyFromPassword, encryptVault, generateKeyExchangeKey, generateSignKey, hexToBuffer, signCryptoKeyFromHex, syncCryptoKeyFromHex, verifySignature } from '@llama-wallet/utils'
 
 function Main() {
   /*   
@@ -11,6 +12,55 @@ function Main() {
   */
 
   return <div />
+}
+
+async function executeCrypto({action, args}:{action:string, args:any}){
+  if(action === "getEncodedKeyFromPassword"){
+    const derivedKey = await deriveSymmetricKeyFromPassword(args.password, true, args.salt)
+    if (!derivedKey) return null
+
+    const encoded = await cryptoKeyToHex(derivedKey.key)
+    return {hash:encoded, salt:derivedKey.salt}
+  } else if (action === "verifySignature"){
+    const key = await signCryptoKeyFromHex(args.extensionPublicKey, false)
+    if (!key) return null
+
+    const buffer = hexToBuffer(args.message)
+
+    const valid = await verifySignature(key, args.signature, buffer)
+    return valid
+  } else if( action === "generateKeyExchangeKey"){
+    const keys = await generateKeyExchangeKey()
+    return {
+      privateKey: await cryptoKeyToHex(keys.privateKey),
+      publicKey: await cryptoKeyToHex(keys.publicKey)
+    }
+  } else if (action === "deriveKey"){
+    const extensionEcdhPublicKeyParsed = await syncCryptoKeyFromHex(args.extensionEcdhPublicKey, false)
+
+    const derived = await deriveKey(await syncCryptoKeyFromHex(args.privateKey, true), extensionEcdhPublicKeyParsed)
+    if (!derived) return
+
+    const encryptSecred = await cryptoKeyToHex(derived)
+    return encryptSecred
+  } else if(action === "encryptVault"){
+    const encrypt = await encryptVault(args.rawKey, args.password)
+
+    return JSON.stringify(encrypt)
+  } else if(action === "decryptVault"){
+    const encryptedVault = JSON.parse(args.encrypted)
+
+    const decrypt = await decryptVault(encryptedVault, args.password)
+    return decrypt
+  } else if(action === "generateSignKey"){
+    const signKey = await generateSignKey()
+
+    const [privateKey, publicKey] = await Promise.all([
+      cryptoKeyToHex(signKey.privateKey),
+      cryptoKeyToHex(signKey.publicKey)
+    ])
+    return {privateKey, publicKey}
+  }
 }
 
 function App() {
@@ -41,16 +91,26 @@ function App() {
 
   const handleMessage = useCallback(
     async ({ data }: MessageEvent) => {
-      const { type, data: dataPayload } = data
+      try{
+        const { type, data: dataPayload, id } = JSON.parse(data)
 
-      switch (type) {
-        case 'init':
-          handleInit(dataPayload)
-          break
+        switch (type) {
+          case 'init':
+            handleInit(dataPayload)
+            break
 
-        case 'keygen':
-          await handleKeyGen(dataPayload)
-          break
+          case 'keygen':
+            await handleKeyGen(dataPayload)
+            break
+
+          case "executeCrypto":
+            const result = await executeCrypto(dataPayload);
+            (window as any).ReactNativeWebView.postMessage(JSON.stringify({ data:result, type:"executeCryptoResponse", id }))
+            break
+
+        }
+      } catch(e){
+        console.log("failure in handleMessage", data, e);
       }
     },
 
@@ -58,10 +118,10 @@ function App() {
   )
 
   useEffect(() => {
-    window.addEventListener('message', handleMessage, false)
+    (document as any).addEventListener('message', handleMessage, false)
 
     return () => {
-      window.removeEventListener('message', () => {})
+      (document as any).removeEventListener('message', () => {})
     }
   }, [handleMessage])
 
@@ -94,3 +154,4 @@ root.render(
     </WorkerProvider>
   </StrictMode>
 )
+
