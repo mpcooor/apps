@@ -118,12 +118,14 @@ function App() {
   )
 
   useEffect(() => {
-    (document as any).addEventListener('message', handleMessage, false)
+    const eventListener = (event: MessageEvent) => handleMessage(event);
+
+    (window as any).addEventListener('message', eventListener, false);
 
     return () => {
-      (document as any).removeEventListener('message', () => {})
-    }
-  }, [handleMessage])
+      (window as any).removeEventListener('message', eventListener, false);
+    };
+  }, [handleMessage]);
 
   const handleNewKey = (key: IKeyShare) => {
     console.log(key)
