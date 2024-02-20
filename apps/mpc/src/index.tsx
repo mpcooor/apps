@@ -82,17 +82,17 @@ function App() {
     return
   }
 
-  const handleKeyGen = useCallback(async (data: string) => {
-    const { parties, threshold } = JSON.parse(data)
-
-    console.log(parties, threshold)
-    return
+  const handleKeyGen = useCallback(async (data: { parties: number; threshold: number }) => {
+    const { parties, threshold } = data;
+    // actual wallet creation here
+    return {'keys': 'here'}
   }, [])
 
   const handleMessage = useCallback(
     async ({ data }: MessageEvent) => {
       try{
-        const { type, data: dataPayload, id } = JSON.parse(data)
+        const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+        const { type, data: dataPayload, id } = parsedData
 
         switch (type) {
           case 'init':
@@ -100,8 +100,9 @@ function App() {
             break
 
           case 'keygen':
-            await handleKeyGen(dataPayload)
-            break
+            const keyGenResult = await handleKeyGen(dataPayload);
+            (window as any).ReactNativeWebView.postMessage(JSON.stringify({ data: keyGenResult, type: "keygenResponse", id }));
+            break;
 
           case "executeCrypto":
             const result = await executeCrypto(dataPayload);
