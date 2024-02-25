@@ -113,6 +113,7 @@ export function MpcProvider({
       const interval = setInterval(() => {
         if (connected) {
           clearInterval(interval)
+          console.log("waitForSocketConnect completed")
           resolve()
         }
       }, 50)
@@ -124,6 +125,7 @@ export function MpcProvider({
       const interval = setInterval(() => {
         if (session) {
           clearInterval(interval)
+          console.log("waitForSessionInit completed")
           resolve()
         }
       }, 50)
@@ -135,6 +137,7 @@ export function MpcProvider({
       const interval = setInterval(() => {
         if (!session) {
           clearInterval(interval)
+          console.log("waitForSessionClients – no session available")
           resolve()
 
           return
@@ -142,6 +145,7 @@ export function MpcProvider({
 
         if (Object.keys(session.clients).length >= session.required) {
           clearInterval(interval)
+          console.log("waitForSessionClients completed")
           resolve()
         }
       }, 50)
@@ -224,6 +228,7 @@ export function MpcProvider({
       }
 
       setSession(session)
+      console.log('session created', session)
 
       webSocket.send(
         webSocketMessage({
@@ -236,27 +241,35 @@ export function MpcProvider({
   )
 
   const handleSessionSignupEvent = useCallback(
-    (params: [string, SessionDevice, number] | undefined) => {
-      if (!session || !clientKeys || !params) return
-
-      const [clientId, device, partyIndex] = params
-
-      if (device === client.device) {
-        client.partyIndex = partyIndex
-        client.clientId = clientId
-        setClient(client)
+    async (params: [string, SessionDevice, number] | undefined) => {
+      console.log('handleSessionSignupEvent called with params:', { session, clientKeys, params });
+      await waitForSessionInit();
+      if (!session || !clientKeys || !params) {
+        console.log('Early return due to missing session, clientKeys or params', {session, clientKeys, params});
+        return;
       }
 
+      const [clientId, device, partyIndex] = params;
+
+      if (device === client.device) {
+        console.log('Device matches client device. Updating client partyIndex and clientId');
+        client.partyIndex = partyIndex;
+        client.clientId = clientId;
+        setClient(client);
+      }
+
+      console.log('Updating session clients with new client data');
       session.clients[clientId] = {
         clientId,
         device,
         partyIndex,
         publicKey: clientKeys[device]
-      }
-      setSession(session)
+      };
+      setSession(session);
+      console.log('Session after signup event:', session);
     },
     [client, clientKeys, session]
-  )
+  );
 
   const handleSessionCloseEvent = useCallback(async () => {
     await waitToFinishProcessing()
@@ -365,21 +378,26 @@ export function MpcProvider({
   )
 
   const listen = useCallback(() => {
+    console.log('listening', initialized, webSocket);
     if (!initialized || !webSocket) return
 
     webSocket.onopen = () => {
+      console.log('websocket onopen')
       setConnected(true)
     }
 
     webSocket.onclose = () => {
+      console.log('websocket onclose')
       setConnected(false)
     }
 
     webSocket.onerror = () => {
+      console.log('websocket onerror')
       setConnected(false)
     }
 
     webSocket.onmessage = async ({ data }: MessageEvent) => {
+      console.log('new websocket message', data);
       const { method, params, sender } = JSON.parse(data) as IRelayerMessage
 
       switch (method) {
@@ -388,7 +406,7 @@ export function MpcProvider({
           break
 
         case RelayerNotification.SESSION_SIGNUP_EVENT:
-          handleSessionSignupEvent(params as [string, SessionDevice, number])
+          await handleSessionSignupEvent(params as [string, SessionDevice, number])
           break
 
         case RelayerNotification.SESSION_MESSAGE_EVENT:
@@ -415,14 +433,21 @@ export function MpcProvider({
   ])
 
   const initialize = useCallback(() => {
+
+    console.log('mpc initialize, group id:', groupId);
     if (!groupId) return
 
     const webSocket = new WebSocket(relayerServerUrl + groupId)
-    listen()
 
     setWebSocket(webSocket)
     setInitialized(true)
-  }, [groupId, listen])
+  }, [groupId])
+
+  useEffect(() => {
+    if (webSocket) {
+      listen();
+    }
+  }, [webSocket]); 
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: require once to initialize the provider
   useEffect(() => {
@@ -430,11 +455,10 @@ export function MpcProvider({
   }, [])
 
   const createWallet = async (parties: number, threshold: number) => {
+    console.log('createWallet called, current context:', {parties, threshold, webSocket, initialized, connected})
     if (!webSocket) return
-
     try {
       await waitForSocketConnect()
-
       webSocket.send(
         webSocketMessage({
           method: RelayerEvent.SESSION_CREATE,

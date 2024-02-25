@@ -1,15 +1,61 @@
 import { IKeyShare, SessionDevice } from '@llama-wallet/types'
 import { StrictMode, useCallback, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
-import { MpcProvider, WorkerProvider, useWorker } from '@/mpc'
+import { MpcProvider, WorkerProvider, useWorker, useMpc } from '@/mpc'
 import { cryptoKeyToHex, decryptVault, deriveKey, deriveSymmetricKeyFromPassword, encryptVault, generateKeyExchangeKey, generateSignKey, hexToBuffer, signCryptoKeyFromHex, syncCryptoKeyFromHex, verifySignature } from '@llama-wallet/utils'
 
 function Main() {
-  /*   
-  const sendMessage = (type: string, data: string) => {
-    window.parent.postMessage({ data, type }, '*')
-  } 
-  */
+  const mpc = useMpc()
+  useEffect(() => {
+    if (mpc) {
+      console.log('MPC context changed', mpc);
+    } else {
+      console.error('MPC context is not available');
+    }
+  }, [mpc]);
+
+  if (!mpc) return <></>;
+
+  const { initialized, createWallet } = mpc;
+
+  const handleKeyGen = useCallback(async (data: { parties: number; threshold: number }) => {
+    console.log('handlekeygen', data, initialized)
+    // let keyGenResult = {"keys": "random"}
+    const keyGenResult = await createWallet(data.parties, data.threshold);
+    return keyGenResult
+  }, [createWallet, initialized])
+
+  const handleKeygenMessage = useCallback(
+    async ({ data }: MessageEvent) => {
+      try {
+        const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+        const { type, data: dataPayload, id } = parsedData;
+
+        console.log('got message', type, dataPayload);
+
+        switch (type) {
+          case 'keygen':
+            const keyGenResult = await handleKeyGen(dataPayload);
+            (window as any).ReactNativeWebView.postMessage(JSON.stringify({ data: keyGenResult, type: "keygenResponse", id }));
+            break;
+        }
+      } catch (e) {
+        console.log("failure in handleKeygenMessage", data, e);
+      }
+    },
+    [handleKeyGen]
+  );
+
+  useEffect(() => {
+    // Add the event listener for messages
+    window.addEventListener('message', handleKeygenMessage, false);
+
+    return () => {
+      // Clean up the event listener
+      window.removeEventListener('message', handleKeygenMessage, false);
+    };
+  }, [handleKeygenMessage]);
+  
 
   return <div />
 }
@@ -72,21 +118,16 @@ function App() {
 
   const [clientKeys, setClientKeys] = useState<Record<SessionDevice, string> | undefined>(undefined)
 
-  const handleInit = (data: string) => {
-    const { groupId, signKey, clientKeys } = JSON.parse(data)
+  const handleInit = (data: { groupId: string; signKey: { privateKey: string; publicKey: string }; clientKeys: Record<SessionDevice, string> }) => {
+    console.log('handleInit', data);
+    const { groupId, signKey, clientKeys } = data
 
     setGroupId(groupId)
     setSignKey(signKey)
     setClientKeys(clientKeys)
-
+    console.log('handleInit completed', groupId, signKey, clientKeys );
     return
   }
-
-  const handleKeyGen = useCallback(async (data: { parties: number; threshold: number }) => {
-    const { parties, threshold } = data;
-    // actual wallet creation here
-    return {'keys': 'here'}
-  }, [])
 
   const handleMessage = useCallback(
     async ({ data }: MessageEvent) => {
@@ -99,13 +140,9 @@ function App() {
             handleInit(dataPayload)
             break
 
-          case 'keygen':
-            const keyGenResult = await handleKeyGen(dataPayload);
-            (window as any).ReactNativeWebView.postMessage(JSON.stringify({ data: keyGenResult, type: "keygenResponse", id }));
-            break;
-
           case "executeCrypto":
             const result = await executeCrypto(dataPayload);
+            console.log('executeCrypto result', result);
             (window as any).ReactNativeWebView.postMessage(JSON.stringify({ data:result, type:"executeCryptoResponse", id }))
             break
 
@@ -114,8 +151,7 @@ function App() {
         console.log("failure in handleMessage", data, e);
       }
     },
-
-    [handleKeyGen, handleInit]
+    []
   )
 
   useEffect(() => {
@@ -132,7 +168,7 @@ function App() {
     console.log(key)
   }
 
-  if (!worker) return <div />
+  if (!worker || !(clientKeys && groupId && signKey)) return <div />
 
   return (
     <MpcProvider
