@@ -19,9 +19,10 @@ function Main() {
   const { initialized, createWallet } = mpc;
 
   const handleKeyGen = useCallback(async (data: { parties: number; threshold: number }) => {
-    console.log('handlekeygen', data, initialized)
-    // let keyGenResult = {"keys": "random"}
-    const keyGenResult = await createWallet(data.parties, data.threshold);
+    const parsedData = typeof data === 'string' ? JSON.parse(data) : data; // TODO: somehow it can be string here 
+    console.log('handlekeygen', parsedData, initialized, typeof parsedData)
+
+    const keyGenResult = await createWallet(parsedData.parties, parsedData.threshold);
     return keyGenResult
   }, [createWallet, initialized])
 
@@ -119,9 +120,9 @@ function App() {
   const [clientKeys, setClientKeys] = useState<Record<SessionDevice, string> | undefined>(undefined)
 
   const handleInit = (data: { groupId: string; signKey: { privateKey: string; publicKey: string }; clientKeys: Record<SessionDevice, string> }) => {
-    console.log('handleInit', data);
-    const { groupId, signKey, clientKeys } = data
-
+    const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+    const { groupId, signKey, clientKeys } = parsedData
+    console.log('handleInit', { groupId, signKey, clientKeys });
     setGroupId(groupId)
     setSignKey(signKey)
     setClientKeys(clientKeys)
