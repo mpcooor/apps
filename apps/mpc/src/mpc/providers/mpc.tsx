@@ -19,7 +19,7 @@ import {
   verifySignature,
   webSocketMessage
 } from '@llama-wallet/utils'
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState, useRef } from 'react'
 
 import { KeyGenerator, Signer } from '../wasm'
 import { IEcdsaWorker } from '../worker'
@@ -53,8 +53,18 @@ export function MpcProvider({
   worker: IEcdsaWorker
 }) {
   const [session, setSession] = useState<ISessionData | undefined>(undefined)
+  const sessionRef = useRef(session);
+
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
 
   const [keygen, setKeygen] = useState<KeyGenerator | undefined>(undefined)
+  const keygenRef = useRef(keygen);
+
+  useEffect(() => {
+    keygenRef.current = keygen;
+  }, [keygen]);
 
   const [, setSigner] = useState<Signer | undefined>(undefined)
 
@@ -64,7 +74,13 @@ export function MpcProvider({
 
   const [initialized, setInitialized] = useState(false)
 
-  const [client, setClient] = useState<IClientData>({ device })
+  const [client, setClient] = useState<IClientData>({ device });
+  const clientRef = useRef(client);
+
+  useEffect(() => {
+    clientRef.current = client;
+    console.log('client changed', clientRef.current)
+  }, [client]);
 
   const verifyMessage = useCallback(
     async (sender: SessionDevice, message: string, signature: string): Promise<boolean> => {
@@ -120,10 +136,12 @@ export function MpcProvider({
     })
   }
 
+  
+
   const waitForSessionInit = async () => {
     return new Promise<void>((resolve) => {
       const interval = setInterval(() => {
-        if (session) {
+        if (sessionRef.current) {
           clearInterval(interval)
           console.log("waitForSessionInit completed")
           resolve()
@@ -132,10 +150,12 @@ export function MpcProvider({
     })
   }
 
+
+
   const waitForSessionClients = async () => {
     return new Promise<void>((resolve) => {
       const interval = setInterval(() => {
-        if (!session) {
+        if (!sessionRef.current) {
           clearInterval(interval)
           console.log("waitForSessionClients – no session available")
           resolve()
@@ -143,7 +163,7 @@ export function MpcProvider({
           return
         }
 
-        if (Object.keys(session.clients).length >= session.required) {
+        if (Object.keys(sessionRef.current.clients).length >= sessionRef.current.required) {
           clearInterval(interval)
           console.log("waitForSessionClients completed")
           resolve()
@@ -174,39 +194,40 @@ export function MpcProvider({
     return new Promise<void>((resolve) => {
       const interval = setInterval(async () => {
         if (!session) {
-          clearInterval(interval)
-          resolve()
-          return
+          clearInterval(interval);
+          resolve();
+          return;
         }
 
         if (session.round >= session.roundsRequired + 1) {
           try {
-            if (!keygen || !webSocket) return
+            if (!keygenRef.current || !webSocket) return;
 
-            await keygen.proceed()
+            await keygenRef.current.proceed();
 
-            const key = await keygen.create()
+            const key = await keygenRef.current.create();
 
             webSocket.send(
               webSocketMessage({
                 method: RelayerEvent.SESSION_FINISH,
                 params: [session.sessionId]
               })
-            )
+            );
 
-            onNewKey(key)
+            onNewKey(key);
 
-            clearInterval(interval)
-            resolve()
+            clearInterval(interval);
+            resolve();
           } catch (e) {
-            console.error(e)
-            clearInterval(interval)
-            resolve()
+            console.error(e);
+            clearInterval(interval);
+            resolve();
           }
         }
-      }, 50)
-    })
-  }, [keygen, onNewKey, session, webSocket])
+      }, 50);
+    });
+  }, [keygenRef, onNewKey, session, webSocket]);
+
 
   const handleSessionCreateEvent = useCallback(
     async (params: [SessionKind, number, number, string] | undefined) => {
@@ -214,7 +235,7 @@ export function MpcProvider({
 
       const [kind, parties, threshold, sessionId] = params
 
-      const session = {
+      const newSession = {
         clients: {},
         kind,
         messagesQueue: [],
@@ -227,9 +248,10 @@ export function MpcProvider({
         threshold
       }
 
-      setSession(session)
-      console.log('session created', session)
-
+      setSession(newSession)
+      console.log('session set called')
+      await waitForSessionInit();
+      console.log('session set success', session)
       webSocket.send(
         webSocketMessage({
           method: RelayerEvent.SESSION_JOIN,
@@ -242,10 +264,10 @@ export function MpcProvider({
 
   const handleSessionSignupEvent = useCallback(
     async (params: [string, SessionDevice, number] | undefined) => {
-      console.log('handleSessionSignupEvent called with params:', { session, clientKeys, params });
+      console.log('handleSessionSignupEvent called with params:', { sessionRef, clientKeys, params });
       await waitForSessionInit();
-      if (!session || !clientKeys || !params) {
-        console.log('Early return due to missing session, clientKeys or params', {session, clientKeys, params});
+      if (!sessionRef.current || !clientKeys || !params) {
+        console.log('Early return due to missing session, clientKeys or params', {sessionRef, clientKeys, params});
         return;
       }
 
@@ -253,20 +275,27 @@ export function MpcProvider({
 
       if (device === client.device) {
         console.log('Device matches client device. Updating client partyIndex and clientId');
-        client.partyIndex = partyIndex;
-        client.clientId = clientId;
-        setClient(client);
+        setClient({
+          ...client,
+          partyIndex: partyIndex,
+          clientId: clientId
+        });
       }
 
       console.log('Updating session clients with new client data');
-      session.clients[clientId] = {
-        clientId,
-        device,
-        partyIndex,
-        publicKey: clientKeys[device]
+      const updatedSession = {
+        ...sessionRef.current,
+        clients: {
+          ...sessionRef.current.clients,
+          [clientId]: {
+            clientId,
+            device,
+            partyIndex,
+            publicKey: clientKeys[device]
+          }
+        }
       };
-      setSession(session);
-      console.log('Session after signup event:', session);
+      setSession(updatedSession);
     },
     [client, clientKeys, session]
   );
@@ -280,24 +309,31 @@ export function MpcProvider({
   }, [waitToFinishProcessing])
 
   const handleSessionStart = useCallback(async () => {
-    if (!session || !webSocket) return
+    console.log('handleSessionStart', sessionRef.current,clientRef.current, webSocket)
+    if (!sessionRef.current || !webSocket) return
 
-    if (session.kind === SessionKind.KEYGEN) {
+    if (sessionRef.current.kind === SessionKind.KEYGEN) {
+      console.log('worker key generater', worker.KeyGenerator, { parties: sessionRef.current.parties, threshold: sessionRef.current.threshold }, { number: clientRef.current.partyIndex, uuid: clientRef.current.clientId })
       // biome-ignore lint/suspicious/noExplicitAny: unable to convert between class and type
-      const keygen = await new (worker.KeyGenerator as any)(
+      const keygenInstance = await new (worker.KeyGenerator as any)(
         {
-          parties: session.parties,
-          threshold: session.threshold
+          parties: sessionRef.current.parties,
+          threshold: sessionRef.current.threshold
         },
-        { number: client.partyIndex, uuid: client.clientId }
+        { number: clientRef.current.partyIndex, uuid: clientRef.current.clientId }
       )
 
-      const [, messages] = await keygen.proceed()
+      console.log('keygen created', keygenInstance)
 
-      setKeygen(keygen)
+      const [, messages] = await keygenInstance.proceed()
+
+      setKeygen(keygenInstance)
+
+      console.log('keygen set')
 
       for (const message of messages) {
         const signedMessage = await signMessage(message)
+        console.log('signed message', signedMessage)
         if (!signedMessage) return
 
         const { rawMessage, signature } = signedMessage
@@ -305,7 +341,7 @@ export function MpcProvider({
         webSocket.send(
           webSocketMessage({
             method: RelayerEvent.SESSION_MESSAGE,
-            params: [session.sessionId, rawMessage, signature],
+            params: [sessionRef.current.sessionId, rawMessage, signature],
             sender: client.device
           })
         )
@@ -313,42 +349,46 @@ export function MpcProvider({
     }
 
     waitForRoundEnd()
-  }, [client, session, signMessage, waitForRoundEnd, webSocket, worker.KeyGenerator])
+  }, [clientRef, sessionRef, signMessage, waitForRoundEnd, webSocket, worker.KeyGenerator])
 
   const handleSessionMessageEvent = useCallback(
     async (params: [string, string] | undefined, sender: SessionDevice | undefined) => {
-      if (!params || !session || !keygen || !webSocket || !sender) return
+      console.log('handleSessionMessageEvent called', { params, sender, session: sessionRef.current, keygen: keygenRef.current, webSocket, client });
+
+      if (!params || !sessionRef.current || !keygenRef.current || !webSocket || !sender) return
 
       const [rawMessage, signature] = params
 
       if (sender !== client.device) {
         const valid = await verifyMessage(sender, rawMessage, signature)
+        console.log('Message verification result:', valid);
 
         if (valid) {
           await waitToFinishProcessing()
 
-          session.processing = true
+          sessionRef.current.processing = true
 
           const message = roundKeygenFromString(rawMessage)
           if (!message) return
 
-          session.messagesQueue.push(message)
+          sessionRef.current.messagesQueue.push(message)
 
-          setSession(session)
+          setSession({ ...sessionRef.current })
+          console.log('Session after message added to queue:', sessionRef.current);
 
-          if (session.messagesQueue.length >= session.required) {
-            const messages = session.messagesQueue
-            session.messagesQueue = []
+          if (sessionRef.current.messagesQueue.length >= sessionRef.current.required) {
+            const messages = sessionRef.current.messagesQueue
+            sessionRef.current.messagesQueue = []
 
             for (const message of messages) {
-              await keygen.handleIncoming(message)
+              await keygenRef.current.handleIncoming(message)
             }
 
-            session.round++
+            sessionRef.current.round++
 
-            const [, newMessages] = await keygen.proceed()
+            const [, newMessages] = await keygenRef.current.proceed()
 
-            setKeygen(keygen)
+            setKeygen(keygenRef.current)
 
             for (const message of newMessages) {
               if (message) {
@@ -360,7 +400,7 @@ export function MpcProvider({
                 webSocket.send(
                   webSocketMessage({
                     method: RelayerEvent.SESSION_MESSAGE,
-                    params: [session.sessionId, rawMessage, signature],
+                    params: [sessionRef.current.sessionId, rawMessage, signature],
                     sender: client.device
                   })
                 )
@@ -368,13 +408,14 @@ export function MpcProvider({
             }
           }
 
-          session.processing = false
+          sessionRef.current.processing = false
 
-          setSession(session)
+          setSession({ ...sessionRef.current })
+          console.log('Session after processing:', sessionRef.current);
         }
       }
     },
-    [client, keygen, session, signMessage, verifyMessage, waitToFinishProcessing, webSocket]
+    [client, keygenRef, sessionRef, signMessage, verifyMessage, waitToFinishProcessing, webSocket]
   )
 
   const listen = useCallback(() => {
@@ -429,7 +470,8 @@ export function MpcProvider({
     handleSessionSignupEvent,
     handleSessionStart,
     initialized,
-    webSocket
+    webSocket,
+    session
   ])
 
   const initialize = useCallback(() => {
@@ -441,7 +483,7 @@ export function MpcProvider({
 
     setWebSocket(webSocket)
     setInitialized(true)
-  }, [groupId])
+  }, [groupId, session])
 
   useEffect(() => {
     if (webSocket) {
